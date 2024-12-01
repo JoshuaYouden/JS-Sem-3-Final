@@ -46,9 +46,29 @@ app.get("/", async (request, response) => {
   response.render("index/unauthenticatedIndex", {});
 });
 
-app.get("/login", async (request, response) => {});
+app.get("/login", async (request, response) => {
+  response.render("login", { errorMessage: null });
+});
 
-app.post("/login", async (request, response) => {});
+app.post("/login", async (request, response) => {
+  const { username, email, password } = request.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return response.render("login", { errorMessage: "Invalid credentials" });
+    }
+
+    request.session.user = { id: user.id, username: user.username };
+
+    return response.redirect("/dashboard");
+  } catch (error) {
+    console.error("Error logging in:", error);
+    return response.render("login", {
+      errorMessage: "An error has occurred, please try again",
+    });
+  }
+});
 
 app.get("/signup", async (request, response) => {
   if (request.session.user?.id) {
