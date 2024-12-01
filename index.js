@@ -4,6 +4,7 @@ const path = require("path");
 const mongoose = require("mongoose");
 const session = require("express-session");
 const bcrypt = require("bcrypt");
+const User = require("./models/user");
 
 const PORT = 3000;
 //TODO: Update this URI to match your own MongoDB setup
@@ -55,6 +56,19 @@ app.get("/signup", async (request, response) => {
   }
 
   return response.render("signup", { errorMessage: null });
+});
+
+app.post("/signup", async (request, response) => {
+  const { username, email, password } = request.body;
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = new User({ username, email, password: hashedPassword });
+    await user.save();
+    response.redirect("/login");
+  } catch (error) {
+    console.error(error);
+    response.render("signup", { errorMessage: "Error signing up" });
+  }
 });
 
 app.get("/dashboard", async (request, response) => {
