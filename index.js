@@ -100,10 +100,11 @@ app.get("/dashboard", async (request, response) => {
   if (!request.session.user?.id) {
     return response.redirect("/");
   }
+  const polls = await Poll.find({});
 
   //TODO: Fix the polls, this should contain all polls that are active. I'd recommend taking a look at the
   //authenticatedIndex template to see how it expects polls to be represented
-  return response.render("index/authenticatedIndex", { polls: [] });
+  return response.render("index/authenticatedIndex", { polls });
 });
 
 app.get("/profile", async (request, response) => {});
