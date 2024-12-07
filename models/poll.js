@@ -8,7 +8,7 @@ const pollSchema = new mongoose.Schema({
   },
   options: [
     {
-      optionText: {
+      answer: {
         type: String,
         required: true,
       },
