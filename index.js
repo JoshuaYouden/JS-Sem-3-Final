@@ -60,7 +60,6 @@ app.post("/login", async (request, response) => {
     }
 
     request.session.user = { id: user.id, username: user.username };
-
     return response.redirect("/dashboard");
   } catch (error) {
     console.error("Error logging in:", error);
