@@ -107,7 +107,15 @@ app.get("/dashboard", async (request, response) => {
   return response.render("index/authenticatedIndex", { polls });
 });
 
-app.get("/profile", async (request, response) => {});
+app.get("/profile", async (request, response) => {
+  if (!request.session.user?.id) {
+    return response.redirect("/");
+  }
+  const user = await User.findById(request.session.user.id);
+  const pollsVoted = (await user.pollsVoted) || 0;
+
+  return response.render("profile", { name: user.username, pollsVoted });
+});
 
 app.get("/createPoll", async (request, response) => {
   if (!request.session.user?.id) {
@@ -125,8 +133,16 @@ app.post("/createPoll", async (request, response) => {
     votes: 0,
   }));
 
-  const pollCreationError = onCreateNewPoll(question, formattedOptions);
+  const pollCreationError = onCreateNewPoll(
+    question,
+    formattedOptions,
+    request.session.user.id
+  );
   //TODO: If an error occurs, what should we do?
+  if (pollCreationError) {
+    return response.render("createPoll", { errorMessage: pollCreationError });
+  }
+  response.redirect("/dashboard");
 });
 
 mongoose
