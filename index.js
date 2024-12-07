@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 const session = require("express-session");
 const bcrypt = require("bcrypt");
 const User = require("./models/user");
+const Poll = require("./models/poll");
 
 const PORT = 3000;
 //TODO: Update this URI to match your own MongoDB setup
@@ -33,9 +34,14 @@ app.ws("/ws", (socket, request) => {
 
   socket.on("message", async (message) => {
     const data = JSON.parse(message);
+    if (data.type === "vote") {
+      await onNewVote(data.pollId, data.selectedOption);
+    }
   });
 
-  socket.on("close", async (message) => {});
+  socket.on("close", async (message) => {
+    connectedClients = connectedClients.filter((client) => client !== socket);
+  });
 });
 
 app.get("/", async (request, response) => {
