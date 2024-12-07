@@ -141,19 +141,19 @@ app.post("/createPoll", async (request, response) => {
   }));
 
   try {
-    const error = await onCreateNewPoll(
+    const poll = new Poll({
       question,
-      formattedOptions,
-      request.session.user.id
-    );
-    if (error) {
-      return response.render("createPoll", { errorMessage: error });
-    }
+      options: formattedOptions,
+      createdBy: request.session.user.id,
+      createdAt: new Date(),
+    });
+    await poll.save();
+
     response.redirect("/dashboard");
   } catch (error) {
     console.error("Error creating poll:", error);
-    return response.render("createPoll", {
-      errorMessage: "An error has occurred, please try again",
+    response.render("createPoll", {
+      errorMessage: "An unexpected error occurred. Please try again.",
     });
   }
 });

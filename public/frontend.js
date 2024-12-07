@@ -109,6 +109,7 @@ function onVoteClicked(event) {
   const selectedOption = event.submitter.value;
 
   //TOOD: Tell the server the user voted
+  socket.send(JSON.stringify({ type: "vote", pollId, option: selectedOption }));
 }
 
 //Adds a listener to each existing poll to handle things when the user attempts to vote
