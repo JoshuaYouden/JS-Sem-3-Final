@@ -1,9 +1,12 @@
 <!-- TODO: Header? -->
-<%- include('../partials/header.ejs', { title: "Login" }) %>
+<%- include('../partials/header.ejs', { title: "Poll Dashboard" }) %>
 <div class="main-content">
     <h1>Active Polls</h1>
     <!-- This is an example of how you can render the polls on the page, you're welcome to keep it or change it if you wish. This page isn't fully complete though -->
     <ul id="polls">
+        <% if (polls.length === 0) { %>
+            <p>No polls available. <a href="/createPoll" class="action-button">Create a New Poll Here!</a></p>
+        <% } %>
         <% polls.forEach((poll) => { %>
             <li class="poll-container" id="<%= poll.id %>">
                 <h2><%= poll.question %></h2>
@@ -28,4 +31,5 @@
 </div>
 <script src="/frontend.js" type="application/javascript"></script>
 </body>
+<script src="/public/frontend.js" type="application/javascript"></script>
 </html>
