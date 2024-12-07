@@ -128,21 +128,34 @@ app.get("/createPoll", async (request, response) => {
 // Poll creation
 app.post("/createPoll", async (request, response) => {
   const { question, options } = request.body;
+
+  if (!question || !options || Object.values(options).length < 2) {
+    return response.render("createPoll", {
+      errorMessage: "A poll must have a question and at least two options.",
+    });
+  }
+
   const formattedOptions = Object.values(options).map((option) => ({
     answer: option,
     votes: 0,
   }));
 
-  const pollCreationError = onCreateNewPoll(
-    question,
-    formattedOptions,
-    request.session.user.id
-  );
-  //TODO: If an error occurs, what should we do?
-  if (pollCreationError) {
-    return response.render("createPoll", { errorMessage: pollCreationError });
+  try {
+    const error = await onCreateNewPoll(
+      question,
+      formattedOptions,
+      request.session.user.id
+    );
+    if (error) {
+      return response.render("createPoll", { errorMessage: error });
+    }
+    response.redirect("/dashboard");
+  } catch (error) {
+    console.error("Error creating poll:", error);
+    return response.render("createPoll", {
+      errorMessage: "An error has occurred, please try again",
+    });
   }
-  response.redirect("/dashboard");
 });
 
 mongoose
@@ -161,15 +174,26 @@ mongoose
  * @param {[answer: string, votes: number]} pollOptions The various answers the poll allows and how many votes each answer should start with
  * @returns {string?} An error message if an error occurs, or null if no error occurs.
  */
-async function onCreateNewPoll(question, pollOptions) {
+async function onCreateNewPoll(question, pollOptions, userId) {
   try {
     //TODO: Save the new poll to MongoDB
+    const poll = new Poll({
+      question,
+      options: pollOptions,
+      createdBy: userId,
+    });
+    await poll.save();
+
+    //TODO: Tell all connected sockets that a new poll was added
+    for (const client of connectedClients) {
+      if (client.readyState === 1) {
+        client.send(JSON.stringify({ type: "newPoll", poll }));
+      }
+    }
   } catch (error) {
     console.error(error);
     return "Error creating the poll, please try again";
   }
-
-  //TODO: Tell all connected sockets that a new poll was added
 
   return null;
 }
@@ -185,6 +209,22 @@ async function onCreateNewPoll(question, pollOptions) {
  */
 async function onNewVote(pollId, selectedOption) {
   try {
+    const poll = await Poll.findById(pollId);
+    if (!poll) {
+      console.error("Poll not found");
+      return;
+    }
+
+    const option = poll.options.find((opt) => opt.answer === selectedOption);
+    if (option) {
+      option.votes += 1;
+      await poll.save();
+      for (const client of connectedClients) {
+        if (client.readyState === 1) {
+          client.send(JSON.stringify({ type: "poll-update", poll }));
+        }
+      }
+    }
   } catch (error) {
     console.error("Error updating poll:", error);
   }
