@@ -107,12 +107,6 @@ app.get("/logout", async (request, response) => {
   response.redirect("/");
 });
 
-// app.post("/logout", async (request, response) => {
-//   await User.findByIdAndDelete(request.session.user.id).then(() => {
-//     response.redirect("/");
-//   });
-// });
-
 app.get("/dashboard", async (request, response) => {
   if (!request.session.user?.id) {
     return response.redirect("/");
