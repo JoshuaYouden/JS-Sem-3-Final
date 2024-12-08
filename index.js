@@ -111,10 +111,13 @@ app.get("/profile", async (request, response) => {
   if (!request.session.user?.id) {
     return response.redirect("/");
   }
-  const user = await User.findById(request.session.user.id);
-  const pollsVoted = (await user.pollsVoted) || 0;
 
-  return response.render("profile", { name: user.username, pollsVoted });
+  const polls = await Poll.find({});
+
+  return response.render("profile", {
+    name: request.session.user.username,
+    polls,
+  });
 });
 
 app.get("/createPoll", async (request, response) => {

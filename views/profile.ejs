@@ -1,0 +1,15 @@
+<%- include('partials/header', { title: "Profile" }) %>
+
+<div class="main-content">
+  <h1>Profile</h1>
+  <p>Username: <%= name %></p>
+
+  <h2>Polls Voted:</h2>
+  <ul>
+    <% polls.forEach((poll) => { %>
+    <li class="poll-container" id="<%= poll.id %>">
+      <h2><%= poll.question %></h2>
+    </li>
+    <% }) %>
+  </ul>
+</div>
