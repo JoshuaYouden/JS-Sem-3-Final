@@ -6,6 +6,7 @@ const session = require("express-session");
 const bcrypt = require("bcrypt");
 const User = require("./models/user");
 const Poll = require("./models/poll");
+const { exit } = require("process");
 
 const PORT = 3000;
 //TODO: Update this URI to match your own MongoDB setup
@@ -64,8 +65,7 @@ app.post("/login", async (request, response) => {
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return response.render("login", { errorMessage: "Invalid credentials" });
     }
-
-    request.session.user = { id: user.id, username: user.username };
+    request.session.user = { id: user._id, username: user.username };
     return response.redirect("/dashboard");
   } catch (error) {
     console.error("Error logging in:", error);
@@ -76,11 +76,17 @@ app.post("/login", async (request, response) => {
 });
 
 app.get("/signup", async (request, response) => {
+  const { username, email, password } = request.query;
   if (request.session.user?.id) {
     return response.redirect("/dashboard");
   }
 
-  return response.render("signup", { errorMessage: null });
+  return response.render("signup", {
+    errorMessage: null,
+    username: username ?? "",
+    email: email ?? "",
+    password: password ?? "",
+  });
 });
 
 app.post("/signup", async (request, response) => {
@@ -95,6 +101,17 @@ app.post("/signup", async (request, response) => {
     response.render("signup", { errorMessage: "Error signing up" });
   }
 });
+
+app.get("/logout", async (request, response) => {
+  request.session.destroy();
+  response.redirect("/");
+});
+
+// app.post("/logout", async (request, response) => {
+//   await User.findByIdAndDelete(request.session.user.id).then(() => {
+//     response.redirect("/");
+//   });
+// });
 
 app.get("/dashboard", async (request, response) => {
   if (!request.session.user?.id) {
