@@ -101,24 +101,12 @@ function onIncomingVote(data) {
  * @param {FormDataEvent} event The form event sent after the user clicks a poll option to "submit" the form
  */
 function onVoteClicked(event) {
+  //Note: This function only works if your structure for displaying polls on the page hasn't changed from the template. If you change the template, you'll likely need to change this too
   event.preventDefault();
   const formData = new FormData(event.target);
 
   const pollId = formData.get("poll-id");
   const selectedOption = event.submitter.value;
-
-  fetch(`/polls/${pollId}/vote`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ option: selectedOption }),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      window.location.href = `/polls/${pollId}`;
-    })
-    .catch((error) => console.error(error));
 
   //TOOD: Tell the server the user voted
   socket.send(JSON.stringify({ type: "vote", pollId, option: selectedOption }));
@@ -126,5 +114,15 @@ function onVoteClicked(event) {
 
 //Adds a listener to each existing poll to handle things when the user attempts to vote
 document.querySelectorAll(".poll-form").forEach((pollForm) => {
-  pollForm.addEventListener("submit", onVoteClicked);
+  pollForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    const pollId = formData.get("poll-id");
+    const selectedOption = event.submitter.value;
+
+    console.log("Vote submitted:", { pollId, selectedOption });
+    socket.send(
+      JSON.stringify({ type: "vote", pollId, option: selectedOption })
+    );
+  });
 });

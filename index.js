@@ -33,12 +33,20 @@ let connectedClients = [];
 app.ws("/ws", (socket, request) => {
   connectedClients.push(socket);
 
-  socket.on("message", async (message) => {
-    const data = JSON.parse(message);
-    if (data.type === "vote") {
-      await onNewVote(data.pollId, data.selectedOption);
+  socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    if (data.type === "poll-update") {
+      const poll = data.poll;
+      const pollContainer = document.getElementById(poll._id);
+      if (pollContainer) {
+        const options = pollContainer.querySelector(".poll-options");
+        options.innerHTML = "";
+        poll.options.forEach(({ answer, votes }) => {
+          options.innerHTML += `<li><strong>${answer}:</strong> ${votes} votes</li>`;
+        });
+      }
     }
-  });
+  };
 
   socket.on("close", async (message) => {
     connectedClients = connectedClients.filter((client) => client !== socket);
@@ -172,46 +180,6 @@ app.post("/createPoll", async (request, response) => {
   }
 });
 
-app.get("/polls/:pollId", async (request, response) => {
-  const pollId = request.params.pollId;
-
-  try {
-    const poll = await Poll.findById(pollId);
-    if (!poll) {
-      return response.status(404).send({ message: "Poll not found" });
-    }
-
-    response.render("authenticatedIndex", { poll: poll });
-  } catch (error) {
-    console.error(error);
-    return response.status(500).send({ message: "Error fetching poll" });
-  }
-});
-
-app.post("/polls/:pollId/vote", async (request, response) => {
-  const pollId = request.params.pollId;
-  const selectedOption = request.body.option;
-
-  try {
-    const poll = await Poll.findById(pollId);
-    if (!poll) {
-      return response.status(404).send({ message: "Poll not found" });
-    }
-
-    const option = poll.options.find((opt) => opt.answer === selectedOption);
-    if (option) {
-      option.votes += 1;
-      await poll.save();
-      return response.send({ message: "Vote updated successfully" });
-    } else {
-      return response.status(400).send({ message: "Invalid option" });
-    }
-  } catch (error) {
-    console.error(error);
-    return response.status(500).send({ message: "Error updating vote" });
-  }
-});
-
 mongoose
   .connect(MONGO_URI)
   .then(() =>
@@ -266,20 +234,21 @@ async function onNewVote(pollId, selectedOption) {
     const poll = await Poll.findById(pollId);
     if (!poll) {
       console.error("Poll not found");
-      return;
+      return null;
     }
 
     const option = poll.options.find((opt) => opt.answer === selectedOption);
     if (option) {
       option.votes += 1;
       await poll.save();
-      for (const client of connectedClients) {
-        if (client.readyState === 1) {
-          client.send(JSON.stringify({ type: "poll-update", poll }));
-        }
-      }
+      console.log("Updated poll: ", poll);
+      return poll;
+    } else {
+      console.error("Option not found", selectedOption);
+      return null;
     }
   } catch (error) {
-    console.error("Error updating poll:", error);
+    console.error("Error processing vote", error);
+    return null;
   }
 }
