@@ -172,6 +172,46 @@ app.post("/createPoll", async (request, response) => {
   }
 });
 
+app.get("/polls/:pollId", async (request, response) => {
+  const pollId = request.params.pollId;
+
+  try {
+    const poll = await Poll.findById(pollId);
+    if (!poll) {
+      return response.status(404).send({ message: "Poll not found" });
+    }
+
+    response.render("authenticatedIndex", { poll: poll });
+  } catch (error) {
+    console.error(error);
+    return response.status(500).send({ message: "Error fetching poll" });
+  }
+});
+
+app.post("/polls/:pollId/vote", async (request, response) => {
+  const pollId = request.params.pollId;
+  const selectedOption = request.body.option;
+
+  try {
+    const poll = await Poll.findById(pollId);
+    if (!poll) {
+      return response.status(404).send({ message: "Poll not found" });
+    }
+
+    const option = poll.options.find((opt) => opt.answer === selectedOption);
+    if (option) {
+      option.votes += 1;
+      await poll.save();
+      return response.send({ message: "Vote updated successfully" });
+    } else {
+      return response.status(400).send({ message: "Invalid option" });
+    }
+  } catch (error) {
+    console.error(error);
+    return response.status(500).send({ message: "Error updating vote" });
+  }
+});
+
 mongoose
   .connect(MONGO_URI)
   .then(() =>
