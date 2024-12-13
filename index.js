@@ -33,22 +33,29 @@ let connectedClients = [];
 app.ws("/ws", (socket, request) => {
   connectedClients.push(socket);
 
-  socket.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    if (data.type === "poll-update") {
-      const poll = data.poll;
-      const pollContainer = document.getElementById(poll._id);
-      if (pollContainer) {
-        const options = pollContainer.querySelector(".poll-options");
-        options.innerHTML = "";
-        poll.options.forEach(({ answer, votes }) => {
-          options.innerHTML += `<li><strong>${answer}:</strong> ${votes} votes</li>`;
-        });
-      }
-    }
-  };
+  socket.on("message", async (message) => {
+    try {
+      const data = JSON.parse(message);
 
-  socket.on("close", async (message) => {
+      if (data.type === "vote") {
+        const updatedPoll = await onNewVote(data.pollId, data.option);
+
+        if (updatedPoll) {
+          connectedClients.forEach((client) => {
+            if (client.readyState === 1) {
+              client.send(
+                JSON.stringify({ type: "poll-update", poll: updatedPoll })
+              );
+            }
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error processing WebSocket message:", error);
+    }
+  });
+
+  socket.on("close", () => {
     connectedClients = connectedClients.filter((client) => client !== socket);
   });
 });

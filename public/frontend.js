@@ -16,7 +16,16 @@ socket.addEventListener("message", (event) => {
     const data = JSON.parse(event.data);
 
     if (data.type === "poll-update") {
-      onIncomingVote(data);
+      const poll = data.poll;
+
+      const pollContainer = document.getElementById(poll._id);
+      if (pollContainer) {
+        const options = pollContainer.querySelector(".poll-options");
+        options.innerHTML = "";
+        poll.options.forEach(({ answer, votes }) => {
+          options.innerHTML += `<li><strong>${answer}:</strong> ${votes} votes</li>`;
+        });
+      }
     } else if (data.type === "new-poll") {
       onNewPollAdded(data);
     }
@@ -84,7 +93,7 @@ function onNewPollAdded(data) {
  */
 function onIncomingVote(data) {
   const poll = data.poll;
-  const pollContainer = document.getElementById(poll.id);
+  const pollContainer = document.getElementById(poll._id);
 
   if (pollContainer) {
     const options = pollContainer.querySelector(".poll-options");
@@ -119,7 +128,6 @@ document.querySelectorAll(".poll-form").forEach((pollForm) => {
     const formData = new FormData(event.target);
     const pollId = formData.get("poll-id");
     const selectedOption = event.submitter.value;
-
     console.log("Vote submitted:", { pollId, selectedOption });
     socket.send(
       JSON.stringify({ type: "vote", pollId, option: selectedOption })
