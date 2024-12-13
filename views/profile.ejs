@@ -1,15 +1,21 @@
 <%- include('partials/header', { title: "Profile" }) %>
 
 <div class="main-content">
-  <h1>Profile</h1>
-  <p>Username: <%= name %></p>
+  <h1><%= name %>'s Profile</h1>
 
   <h2>Polls Voted:</h2>
-  <ul>
+  <% if (pollsVotedCount === 0) { %>
+  <p>You haven't voted on any polls yet.</p>
+  <% } %> <% if (pollsVotedCount === 1) { %>
+  <p>You have voted in <%= pollsVotedCount %> poll.</p>
+  <% } %> <% if (pollsVotedCount > 1) { %>
+  <p>You have voted in <%= pollsVotedCount %> polls.</p>
+  <ul class="polls-voted-list">
     <% polls.forEach((poll) => { %>
-    <li class="poll-container" id="<%= poll.id %>">
-      <h2><%= poll.question %></h2>
+    <li>
+      <a href="/poll/<%= poll._id %>" class="poll-link"><%= poll.question %></a>
     </li>
     <% }) %>
   </ul>
+  <% } %>
 </div>

@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const { create } = require("./user");
 
 const pollSchema = new mongoose.Schema({
   question: {
@@ -16,6 +15,12 @@ const pollSchema = new mongoose.Schema({
         type: Number,
         default: 0,
       },
+    },
+  ],
+  voters: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
     },
   ],
   createdBy: {

@@ -27,6 +27,18 @@ body {
   text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
 }
 
+.main-content h2 {
+  font-size: 40px;
+  margin-bottom: 15px;
+  color: #f0f0f0;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.main-content p {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
 .main-content ul {
   margin: 0;
   padding: 0;
@@ -151,6 +163,29 @@ body {
 
 .poll-options strong {
   font-weight: bold;
+}
+
+.polls-voted-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 15px;
+}
+
+.polls-voted-list li {
+  margin-bottom: 10px;
+}
+
+.poll-link {
+  text-decoration: none;
+  color: blue;
+  font-size: 18px;
+  font-weight: bold;
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+.poll-link:hover {
+  color: #ffd700;
+  text-shadow: 2px 2px 8px rgba(255, 215, 0, 0.8);
 }
 
 button.action-button {

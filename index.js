@@ -38,7 +38,8 @@ app.ws("/ws", (socket, request) => {
       const data = JSON.parse(message);
 
       if (data.type === "vote") {
-        const updatedPoll = await onNewVote(data.pollId, data.option);
+        const { pollId, option, userId } = data;
+        const updatedPoll = await onNewVote(pollId, option, userId);
 
         if (updatedPoll) {
           connectedClients.forEach((client) => {
@@ -137,13 +138,27 @@ app.get("/profile", async (request, response) => {
   if (!request.session.user?.id) {
     return response.redirect("/");
   }
+  try {
+    const userName = request.session.user.username;
+    const pollsVoted = await Poll.find({ voters: request.session.user.id })
+      .select("question _id")
+      .exec();
+    const pollsVotedCount = pollsVoted.length;
 
-  const polls = await Poll.find({});
-
-  return response.render("profile", {
-    name: request.session.user.username,
-    polls,
-  });
+    return response.render("profile", {
+      name: userName,
+      pollsVotedCount,
+      polls: pollsVoted,
+    });
+  } catch (error) {
+    console.error("Error retrieving profile data:", error);
+    return response.render("profile", {
+      name: request.session.user.username,
+      pollsVotedCount: 0,
+      polls: [],
+      errorMessage: "An error has occurred while loading your profile",
+    });
+  }
 });
 
 app.get("/createPoll", async (request, response) => {
@@ -235,10 +250,13 @@ async function onCreateNewPoll(question, pollOptions, userId) {
  *
  * @param {string} pollId The ID of the poll that was voted on
  * @param {string} selectedOption Which option the user voted for
+ * @param {string} userId The ID of the user that voted
+ * @returns {object|null} The updated poll, or null if an error occurs
  */
-async function onNewVote(pollId, selectedOption) {
+async function onNewVote(pollId, selectedOption, userId) {
   try {
     const poll = await Poll.findById(pollId);
+
     if (!poll) {
       console.error("Poll not found");
       return null;
@@ -247,6 +265,11 @@ async function onNewVote(pollId, selectedOption) {
     const option = poll.options.find((opt) => opt.answer === selectedOption);
     if (option) {
       option.votes += 1;
+
+      if (userId && !poll.voters.includes(userId)) {
+        poll.voters.push(userId);
+      }
+
       await poll.save();
       console.log("Updated poll: ", poll);
       return poll;

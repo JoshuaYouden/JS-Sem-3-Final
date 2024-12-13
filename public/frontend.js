@@ -1,5 +1,3 @@
-const { on } = require("../models/user");
-
 // Establish a WebSocket connection to the server
 const socket = new WebSocket("ws://localhost:3000/ws");
 
@@ -7,38 +5,33 @@ socket.onopen = () => {
   console.log("Connection established.");
 };
 
-// Listen for messages from the server
-socket.addEventListener("message", (event) => {
+//TODO: Handle the events from the socket
+socket.onmessage = (event) => {
   const data = JSON.parse(event.data);
 
-  //TODO: Handle the events from the socket
-  socket.onmessage = (event) => {
-    const data = JSON.parse(event.data);
+  if (data.type === "poll-update") {
+    const poll = data.poll;
 
-    if (data.type === "poll-update") {
-      const poll = data.poll;
-
-      const pollContainer = document.getElementById(poll._id);
-      if (pollContainer) {
-        const options = pollContainer.querySelector(".poll-options");
-        options.innerHTML = "";
-        poll.options.forEach(({ answer, votes }) => {
-          options.innerHTML += `<li><strong>${answer}:</strong> ${votes} votes</li>`;
-        });
-      }
-    } else if (data.type === "new-poll") {
-      onNewPollAdded(data);
+    const pollContainer = document.getElementById(poll._id);
+    if (pollContainer) {
+      const options = pollContainer.querySelector(".poll-options");
+      options.innerHTML = "";
+      poll.options.forEach(({ answer, votes }) => {
+        options.innerHTML += `<li><strong>${answer}:</strong> ${votes} votes</li>`;
+      });
     }
-  };
+  } else if (data.type === "new-poll") {
+    onNewPollAdded(data);
+  }
+};
 
-  socket.onerror = (error) => {
-    console.error("WebSocket Error:", error);
-  };
+socket.onerror = (error) => {
+  console.error("WebSocket Error:", error);
+};
 
-  socket.onclose = () => {
-    console.warn("WebSocket connection closed.");
-  };
-});
+socket.onclose = () => {
+  console.warn("WebSocket connection closed.");
+};
 
 /**
  * Handles adding a new poll to the page when one is received from the server
@@ -128,9 +121,10 @@ document.querySelectorAll(".poll-form").forEach((pollForm) => {
     const formData = new FormData(event.target);
     const pollId = formData.get("poll-id");
     const selectedOption = event.submitter.value;
-    console.log("Vote submitted:", { pollId, selectedOption });
+    const userId = window.userId;
+    console.log("Vote submitted:", { pollId, selectedOption, userId });
     socket.send(
-      JSON.stringify({ type: "vote", pollId, option: selectedOption })
+      JSON.stringify({ type: "vote", pollId, option: selectedOption, userId })
     );
   });
 });
