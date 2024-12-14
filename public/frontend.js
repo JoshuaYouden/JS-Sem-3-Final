@@ -118,13 +118,20 @@ function onVoteClicked(event) {
 document.querySelectorAll(".poll-form").forEach((pollForm) => {
   pollForm.addEventListener("submit", (event) => {
     event.preventDefault();
+
     const formData = new FormData(event.target);
     const pollId = formData.get("poll-id");
     const selectedOption = event.submitter.value;
-    const userId = window.userId;
+
     console.log("Vote submitted:", { pollId, selectedOption, userId });
+
     socket.send(
-      JSON.stringify({ type: "vote", pollId, option: selectedOption, userId })
+      JSON.stringify({
+        type: "vote",
+        pollId: pollId,
+        option: selectedOption,
+        userId: userId,
+      })
     );
   });
 });

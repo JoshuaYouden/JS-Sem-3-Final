@@ -39,6 +39,9 @@ app.ws("/ws", (socket, request) => {
 
       if (data.type === "vote") {
         const { pollId, option, userId } = data;
+
+        console.log("Vote Received:", { pollId, option, userId });
+
         const updatedPoll = await onNewVote(pollId, option, userId);
 
         if (updatedPoll) {
@@ -140,6 +143,7 @@ app.get("/profile", async (request, response) => {
   }
   try {
     const userName = request.session.user.username;
+    const userId = request.session.user.id;
     const pollsVoted = await Poll.find({ voters: request.session.user.id })
       .select("question _id")
       .exec();
@@ -147,6 +151,7 @@ app.get("/profile", async (request, response) => {
 
     return response.render("profile", {
       name: userName,
+      userId: userId,
       pollsVotedCount,
       polls: pollsVoted,
     });
@@ -266,7 +271,7 @@ async function onNewVote(pollId, selectedOption, userId) {
     if (option) {
       option.votes += 1;
 
-      if (userId && !poll.voters.includes(userId)) {
+      if (!poll.voters.includes(userId)) {
         poll.voters.push(userId);
       }
 
