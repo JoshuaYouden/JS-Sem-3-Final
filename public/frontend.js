@@ -10,13 +10,13 @@ socket.onmessage = (event) => {
   const data = JSON.parse(event.data);
 
   if (data.type === "poll-update") {
-    const poll = data.poll;
+    const updatedPoll = data.poll;
 
-    const pollContainer = document.getElementById(poll._id);
+    const pollContainer = document.getElementById(updatedPoll._id);
     if (pollContainer) {
       const options = pollContainer.querySelector(".poll-options");
       options.innerHTML = "";
-      poll.options.forEach(({ answer, votes }) => {
+      updatedPoll.options.forEach(({ answer, votes }) => {
         options.innerHTML += `<li><strong>${answer}:</strong> ${votes} votes</li>`;
       });
     }

@@ -131,10 +131,11 @@ app.get("/dashboard", async (request, response) => {
     return response.redirect("/");
   }
   const polls = await Poll.find({});
+  const userId = request.session.user.id;
 
   //TODO: Fix the polls, this should contain all polls that are active. I'd recommend taking a look at the
   //authenticatedIndex template to see how it expects polls to be represented
-  return response.render("index/authenticatedIndex", { polls });
+  return response.render("index/authenticatedIndex", { polls, userId });
 });
 
 app.get("/profile", async (request, response) => {
@@ -144,21 +145,22 @@ app.get("/profile", async (request, response) => {
   try {
     const userName = request.session.user.username;
     const userId = request.session.user.id;
-    const pollsVoted = await Poll.find({ voters: request.session.user.id })
+    const pollsVoted = await Poll.find({ voters: userId })
       .select("question _id")
       .exec();
+
     const pollsVotedCount = pollsVoted.length;
 
     return response.render("profile", {
       name: userName,
       userId: userId,
-      pollsVotedCount,
+      pollsVotedCount: pollsVotedCount,
       polls: pollsVoted,
     });
   } catch (error) {
     console.error("Error retrieving profile data:", error);
     return response.render("profile", {
-      name: request.session.user.username,
+      name: request.session.user?.username || "User",
       pollsVotedCount: 0,
       polls: [],
       errorMessage: "An error has occurred while loading your profile",
@@ -204,6 +206,22 @@ app.post("/createPoll", async (request, response) => {
     response.render("createPoll", {
       errorMessage: "An unexpected error occurred. Please try again.",
     });
+  }
+});
+
+app.get("/polls/:id", async (request, response) => {
+  try {
+    const pollId = request.params.id;
+    const poll = await Poll.findById(pollId);
+
+    if (!poll) {
+      return response.status(404).send("Poll not found");
+    }
+
+    return response.render("pollDetails", { poll });
+  } catch (error) {
+    console.error("Error fetching poll:", error);
+    return response.status(500).send("An error occurred.");
   }
 });
 
